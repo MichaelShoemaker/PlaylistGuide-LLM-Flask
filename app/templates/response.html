@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f4f4f9;
+            color: #333;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 600px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            color: #444;
+            margin-bottom: 20px;
+        }
+
+        .section {
+            margin-bottom: 15px;
+        }
+
+        .section h2 {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .section p {
+            font-size: 1rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .link a {
+            display: inline-block;
+            margin-top: 10px;
+            color: #007BFF;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .link a:hover {
+            text-decoration: underline;
+        }
+
+        .back-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .back-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Search Results for: "{{ question }}"</h1>
+        <div class="section">
+            <h2>Title</h2>
+            <p>{{ response['title'] }}</p>
+        </div>
+        <div class="section">
+            <h2>Summary</h2>
+            <p>{{ response['summary'] }}</p>
+        </div>
+        <div class="section link">
+            <h2>Link</h2>
+            <a href="{{ response['link'] }}" target="_blank">{{ response['link'] }}</a>
+        </div>
+        <a class="back-button" href="/">Ask Another Question</a>
+    </div>
+</body>
+</html>

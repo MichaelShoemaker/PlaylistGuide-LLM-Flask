@@ -125,12 +125,21 @@ def ask_openai(prompt):
 
 def make_context(question, records):
     return f"""
-    QUESTION:
-    {question}
+        You are a helpful program which is given a quesion and then the results from video transcripts which should answer the question given.
+        This is an online course about using Retreival Augmented Generation (RAGS) and LLMs as well as how to evaluate the results of elasticsearch
+        and the answers from the LLMs, how to monitor the restults etc. In the Course we used MAGE as an Orchestrator and PostgreSQL to capture user
+        feedback. Given the question below, look at the records in the RECORDS section and return the best matching video link and a short summary
+        and answer if you are able to which will answer the students question. Again your response should be a link from the records in the RECORDS
+        section below. 
 
-    RECORDS:
-    {records}
-    """
+        Please return your answer as a dictionary without json```. Just have summary, title and link as as keys in the dictionary.
+
+        QUESTION:
+        {question}
+
+        RECORDS:
+        {records}
+        """
 
 def get_answer(question):
     search_results = multi_search(question)
@@ -154,9 +163,10 @@ def search():
     try:
         response = json.loads(results) if isinstance(results, str) else results
     except json.JSONDecodeError as e:
-        return jsonify({"error": f"Error decoding JSON: {e}", "results": results})
-    
-    return jsonify(response)
+        return render_template('error.html', error=f"Error decoding JSON: {e}", results=results)
+
+    # Pass the response to a nicely designed template
+    return render_template('response.html', response=response, question=question)
 
 @app.route('/feedback', methods=['POST'])
 def submit_feedback():
