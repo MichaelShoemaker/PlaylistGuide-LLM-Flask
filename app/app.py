@@ -163,6 +163,7 @@ def search():
     try:
         response = json.loads(results) if isinstance(results, str) else results
     except json.JSONDecodeError as e:
+        print(response)
         return render_template('error.html', error=f"Error decoding JSON: {e}", results=results)
 
     # Pass the response to a nicely designed template
@@ -176,7 +177,7 @@ def submit_feedback():
     response_title = request.form.get('title')
     response_link = request.form.get('link')
     comments = request.form.get('comments')
-    
+
     try:
         conn = psycopg2.connect(
             dbname=postgres_db,
@@ -187,26 +188,29 @@ def submit_feedback():
         )
         cursor = conn.cursor()
 
-        # Insert feedback into database
+        # Insert feedback into the database
         cursor.execute("""
             INSERT INTO feedback (question, answer, feedback, comments, title, link, date_time)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
         """, (
-            question, 
+            question,
             response_summary,
-            feedback, 
-            comments, 
-            response_title, 
-            response_link, 
+            feedback,
+            comments,
+            response_title,
+            response_link,
             datetime.now()
         ))
         conn.commit()
         cursor.close()
         conn.close()
-        return jsonify({"success": True, "message": "Feedback submitted successfully"})
-    
+
+        # Render a success page
+        return render_template('feedback_success.html', question=question)
+
     except Exception as e:
-        return jsonify({"error": str(e)})
+        return render_template('error.html', error=str(e))
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

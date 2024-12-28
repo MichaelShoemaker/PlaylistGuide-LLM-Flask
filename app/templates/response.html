@@ -3,95 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Results</title>
+    <title>Response</title>
     <style>
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
             margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: #f4f4f9;
+            padding: 20px;
+            background: #f9f9f9;
             color: #333;
         }
 
         .container {
-            width: 90%;
             max-width: 600px;
+            margin: auto;
             background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
             padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
 
         h1 {
             font-size: 1.5rem;
-            color: #444;
             margin-bottom: 20px;
         }
 
-        .section {
-            margin-bottom: 15px;
+        .response-section {
+            margin-bottom: 20px;
         }
 
-        .section h2 {
+        .response-section h2 {
             font-size: 1.2rem;
-            color: #666;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
 
-        .section p {
-            font-size: 1rem;
-            line-height: 1.5;
+        .response-section p {
             margin: 0;
         }
 
-        .link a {
-            display: inline-block;
-            margin-top: 10px;
-            color: #007BFF;
-            text-decoration: none;
+        form {
+            margin-top: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
             font-weight: bold;
         }
 
-        .link a:hover {
-            text-decoration: underline;
+        textarea {
+            width: 100%;
+            height: 80px;
+            margin-bottom: 10px;
+            padding: 10px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 5px;
         }
 
-        .back-button {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 20px;
+        select, button {
+            font-size: 1rem;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        button {
             background-color: #007BFF;
             color: #fff;
-            text-decoration: none;
+            border: none;
             border-radius: 5px;
-            font-size: 1rem;
+            cursor: pointer;
         }
 
-        .back-button:hover {
+        button:hover {
             background-color: #0056b3;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Search Results for: "{{ question }}"</h1>
-        <div class="section">
+        <h1>Response for: "{{ question }}"</h1>
+        <div class="response-section">
             <h2>Title</h2>
             <p>{{ response['title'] }}</p>
         </div>
-        <div class="section">
+        <div class="response-section">
             <h2>Summary</h2>
             <p>{{ response['summary'] }}</p>
         </div>
-        <div class="section link">
+        <div class="response-section">
             <h2>Link</h2>
-            <a href="{{ response['link'] }}" target="_blank">{{ response['link'] }}</a>
+            <p><a href="{{ response['link'] }}" target="_blank">{{ response['link'] }}</a></p>
         </div>
-        <a class="back-button" href="/">Ask Another Question</a>
+
+        <form action="/feedback" method="post">
+            <input type="hidden" name="question" value="{{ question }}">
+            <input type="hidden" name="summary" value="{{ response['summary'] }}">
+            <input type="hidden" name="title" value="{{ response['title'] }}">
+            <input type="hidden" name="link" value="{{ response['link'] }}">
+
+            <label for="feedback">Feedback</label>
+            <select name="feedback" required>
+                <option value="">Select Feedback</option>
+                <option value="positive">Positive</option>
+                <option value="negative">Negative</option>
+            </select>
+
+            <label for="comments">Comments</label>
+            <textarea name="comments" placeholder="Add additional comments here..."></textarea>
+
+            <button type="submit">Submit Feedback</button>
+        </form>
     </div>
 </body>
 </html>
