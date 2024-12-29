@@ -48,7 +48,6 @@ def init_db():
             comments TEXT,
             title TEXT,
             link TEXT NOT NULL,
-            elasticsearch_response JSONB NOT NULL, -- New column for Elasticsearch response
             date_time TIMESTAMP NOT NULL,
             UNIQUE (question, link) -- Ensure unique feedback per question and link
         );
@@ -162,15 +161,33 @@ def search():
     question = request.form['question']
     try:
         search_results = multi_search(question)
-        elasticsearch_response = json.dumps(search_results)  # Serialize Elasticsearch response to JSON
+        elasticsearch_response = json.dumps(search_results, indent=2)  # Serialize Elasticsearch response to JSON for debugging
         print("Elasticsearch Response:", elasticsearch_response)  # Log the response
 
         results = get_answer(question)
-        response = json.loads(results) if isinstance(results, str) else results
-    except json.JSONDecodeError as e:
-        print("JSON Decode Error:", e)
-        print("Raw Results:", results)
-        return render_template('error.html', error=f"Error decoding JSON: {e} Results were {results}", results=results)
+
+        # Ensure `results` is a dictionary
+        if isinstance(results, str):
+            try:
+                response = json.loads(results)  # Decode JSON string to Python dictionary
+            except json.JSONDecodeError as e:
+                print("Error decoding JSON response:", e)
+                print("Raw Results (string):", results)
+                return render_template(
+                    'error.html',
+                    error=f"Error decoding JSON: {e}",
+                    results=results
+                )
+        elif isinstance(results, dict):
+            response = results
+        else:
+            print("Unexpected type for results:", type(results))
+            return render_template(
+                'error.html',
+                error="Unexpected response type.",
+                results=str(results)
+            )
+
     except Exception as e:
         print("Error during search or OpenAI processing:", e)
         return render_template('error.html', error=str(e))
@@ -181,6 +198,7 @@ def search():
         question=question,
         elasticsearch_response=elasticsearch_response
     )
+
 
 @app.route('/feedback', methods=['POST'])
 def submit_feedback():
