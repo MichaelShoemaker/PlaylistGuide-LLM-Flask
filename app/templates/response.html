@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Response</title>
+    <title>Search Results</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -14,7 +14,7 @@
         }
 
         .container {
-            max-width: 600px;
+            max-width: 800px;
             margin: auto;
             background: #fff;
             padding: 20px;
@@ -77,11 +77,20 @@
         button:hover {
             background-color: #0056b3;
         }
+
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Response for: "{{ question }}"</h1>
+        <h1>Search Results for: "{{ question }}"</h1>
+
         <div class="response-section">
             <h2>Title</h2>
             <p>{{ response['title'] }}</p>
@@ -95,11 +104,17 @@
             <p><a href="{{ response['link'] }}" target="_blank">{{ response['link'] }}</a></p>
         </div>
 
+        <!-- <div class="response-section">
+            <h2>Debug: Elasticsearch Response</h2>
+            <pre>{{ elasticsearch_response }}</pre>
+        </div> -->
+
         <form action="/feedback" method="post">
             <input type="hidden" name="question" value="{{ question }}">
             <input type="hidden" name="summary" value="{{ response['summary'] }}">
             <input type="hidden" name="title" value="{{ response['title'] }}">
             <input type="hidden" name="link" value="{{ response['link'] }}">
+            <!-- <input type="hidden" name="elasticsearch_response" value="{{ elasticsearch_response | tojson }}"> -->
 
             <label for="feedback">Feedback</label>
             <select name="feedback" required>

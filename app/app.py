@@ -47,8 +47,10 @@ def init_db():
             feedback VARCHAR(10) CHECK (feedback IN ('positive', 'negative')) NOT NULL,
             comments TEXT,
             title TEXT,
-            link TEXT,
-            date_time TIMESTAMP NOT NULL
+            link TEXT NOT NULL,
+            elasticsearch_response JSONB NOT NULL, -- New column for Elasticsearch response
+            date_time TIMESTAMP NOT NULL,
+            UNIQUE (question, link) -- Ensure unique feedback per question and link
         );
     """)
 
@@ -158,27 +160,47 @@ def home():
 @app.route('/search', methods=['POST'])
 def search():
     question = request.form['question']
-    results = get_answer(question)
-    
     try:
+        search_results = multi_search(question)
+        elasticsearch_response = json.dumps(search_results)  # Serialize Elasticsearch response to JSON
+        print("Elasticsearch Response:", elasticsearch_response)  # Log the response
+
+        results = get_answer(question)
         response = json.loads(results) if isinstance(results, str) else results
     except json.JSONDecodeError as e:
-        print(response)
-        return render_template('error.html', error=f"Error decoding JSON: {e}", results=results)
+        print("JSON Decode Error:", e)
+        print("Raw Results:", results)
+        return render_template('error.html', error=f"Error decoding JSON: {e} Results were {results}", results=results)
+    except Exception as e:
+        print("Error during search or OpenAI processing:", e)
+        return render_template('error.html', error=str(e))
 
-    # Pass the response to a nicely designed template
-    return render_template('response.html', response=response, question=question)
+    return render_template(
+        'response.html',
+        response=response,
+        question=question,
+        elasticsearch_response=elasticsearch_response
+    )
 
 @app.route('/feedback', methods=['POST'])
 def submit_feedback():
-    feedback = request.form.get('feedback')
-    question = request.form.get('question')
-    response_summary = request.form.get('summary')
-    response_title = request.form.get('title')
-    response_link = request.form.get('link')
-    comments = request.form.get('comments')
-
     try:
+        feedback = request.form.get('feedback')
+        question = request.form.get('question')
+        response_summary = request.form.get('summary')
+        response_title = request.form.get('title')
+        response_link = request.form.get('link')
+        comments = request.form.get('comments')
+
+        # Log the received data
+        print("Received Feedback Data:")
+        print(f"Feedback: {feedback}")
+        print(f"Question: {question}")
+        print(f"Summary: {response_summary}")
+        print(f"Title: {response_title}")
+        print(f"Link: {response_link}")
+        print(f"Comments: {comments}")
+
         conn = psycopg2.connect(
             dbname=postgres_db,
             user=postgres_user,
@@ -188,10 +210,17 @@ def submit_feedback():
         )
         cursor = conn.cursor()
 
-        # Insert feedback into the database
+        # Insert or update feedback in the database
         cursor.execute("""
             INSERT INTO feedback (question, answer, feedback, comments, title, link, date_time)
             VALUES (%s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (question, link)
+            DO UPDATE SET 
+                feedback = EXCLUDED.feedback,
+                comments = EXCLUDED.comments,
+                title = EXCLUDED.title,
+                answer = EXCLUDED.answer,
+                date_time = EXCLUDED.date_time;
         """, (
             question,
             response_summary,
@@ -209,8 +238,8 @@ def submit_feedback():
         return render_template('feedback_success.html', question=question)
 
     except Exception as e:
+        print("Error during feedback submission:", e)
         return render_template('error.html', error=str(e))
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
