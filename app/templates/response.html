@@ -104,18 +104,13 @@
             <p><a href="{{ response['link'] }}" target="_blank">{{ response['link'] }}</a></p>
         </div>
 
-        <!-- <div class="response-section">
-            <h2>Debug: Elasticsearch Response</h2>
-            <pre>{{ elasticsearch_response }}</pre>
-        </div> -->
 
         <form action="/feedback" method="post">
             <input type="hidden" name="question" value="{{ question }}">
             <input type="hidden" name="summary" value="{{ response['summary'] }}">
             <input type="hidden" name="title" value="{{ response['title'] }}">
             <input type="hidden" name="link" value="{{ response['link'] }}">
-            <!-- <input type="hidden" name="elasticsearch_response" value="{{ elasticsearch_response | tojson }}"> -->
-
+            
             <label for="feedback">Feedback</label>
             <select name="feedback" required>
                 <option value="">Select Feedback</option>

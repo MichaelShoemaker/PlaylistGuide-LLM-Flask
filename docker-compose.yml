@@ -34,6 +34,7 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4
+    container_name: pgadmin
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
@@ -41,6 +42,8 @@ services:
       - "8080:80"
     depends_on:
       - db
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
 
   flask_app:
     build:
@@ -88,4 +91,5 @@ services:
 volumes:
   esdata:
   pgdata:
+  pgadmin_data:  # New volume for pgAdmin data persistence
   redis_data:
