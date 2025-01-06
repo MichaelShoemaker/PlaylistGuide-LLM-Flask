@@ -1,24 +1,23 @@
-import os
 import json
-from datetime import datetime
+
 from dotenv import load_dotenv
-
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, render_template, request
 from sentence_transformers import SentenceTransformer
-
-load_dotenv()
-from utils.db_utils import init_db, db_conn, insert_feedback
+from utils.db_utils import db_conn, init_db, insert_feedback
 from utils.elasticsearch_utils import multi_search
-from utils.openai_utils import make_context, ask_openai
+from utils.openai_utils import ask_openai, calculate_gpt4o_mini_cost, make_context
 from utils.redis_utils import make_redis_client
 
-model = SentenceTransformer('multi-qa-MiniLM-L6-cos-v1')
+load_dotenv()
+
+model = SentenceTransformer("multi-qa-MiniLM-L6-cos-v1")
 
 # Create feedback table if it does not already exist
 init_db()
 redis_client = make_redis_client()
 
 app = Flask(__name__)
+
 
 def get_answer(question):
     # Get records from Elasticsearch
@@ -29,66 +28,67 @@ def get_answer(question):
         answer = ask_openai(prompt, test=True)
     except Exception as e:
         answer = f"Error: {e}"
-    return answer
+    return answer, prompt
 
 
-@app.route('/')
+@app.route("/")
 def home():
-    return render_template('index.html')
+    return render_template("index.html")
 
-@app.route('/search', methods=['POST'])
+
+@app.route("/search", methods=["POST"])
 def search():
-    question = request.form['question']
+    question = request.form["question"]
     try:
-        #The below was just for troubleshooting
+        # The below was just for troubleshooting
         # search_results = multi_search(question)
-        # elasticsearch_response = json.dumps(search_results, indent=2)  # Serialize Elasticsearch response to JSON for debugging
-        # print("Elasticsearch Response:", elasticsearch_response)  # Log the response
+        # elasticsearch_response = json.dumps(search_results, indent=2)
+        # # Serialize Elasticsearch response to JSON for debugging
+        # print("Elasticsearch Response:", elasticsearch_response)  # Log the
+        # response
 
-        results = get_answer(question)
+        results, prompt = get_answer(question)
+
+        cost = calculate_gpt4o_mini_cost(prompt, results)
 
         # Ensure `results` is a dictionary
         if isinstance(results, str):
             try:
-                response = json.loads(results)  # Decode JSON string to Python dictionary
+                response = json.loads(
+                    results
+                )  # Decode JSON string to Python dictionary
+                response["cost"] = cost
             except json.JSONDecodeError as e:
                 print("Error decoding JSON response:", e)
                 print("Raw Results (string):", results)
                 return render_template(
-                    'error.html',
-                    error=f"Error decoding JSON: {e}",
-                    results=results
+                    "error.html", error=f"Error decoding JSON: {e}", results=results
                 )
         elif isinstance(results, dict):
             response = results
         else:
             print("Unexpected type for results:", type(results))
             return render_template(
-                'error.html',
-                error="Unexpected response type.",
-                results=str(results)
+                "error.html", error="Unexpected response type.", results=str(results)
             )
 
     except Exception as e:
         print("Error during search or OpenAI processing:", e)
-        return render_template('error.html', error=str(e))
+        return render_template("error.html", error=str(e))
 
     return render_template(
-        'response.html',
-        response=response,
-        question=question
-    )
+        "response.html", response=response, question=question)
 
 
-@app.route('/feedback', methods=['POST'])
+@app.route("/feedback", methods=["POST"])
 def submit_feedback():
     try:
-        feedback = request.form.get('feedback')
-        question = request.form.get('question')
-        response_summary = request.form.get('summary')
-        response_title = request.form.get('title')
-        response_link = request.form.get('link')
-        comments = request.form.get('comments')
+        feedback = request.form.get("feedback")
+        question = request.form.get("question")
+        response_summary = request.form.get("summary")
+        response_title = request.form.get("title")
+        response_link = request.form.get("link")
+        comments = request.form.get("comments")
 
         # Log the received data
         print("Received Feedback Data:")
@@ -99,19 +99,28 @@ def submit_feedback():
         print(f"Link: {response_link}")
         print(f"Comments: {comments}")
 
-
         with db_conn() as conn:
             with conn.cursor() as cursor:
                 # Unpack the tuple into the query and parameters
-                query, params = insert_feedback(question, response_summary, feedback, comments, response_title, response_link)
-                cursor.execute(query, params)  # Pass the query and parameters separately
+                query, params = insert_feedback(
+                    question,
+                    response_summary,
+                    feedback,
+                    comments,
+                    response_title,
+                    response_link,
+                )
+                cursor.execute(
+                    query, params
+                )  # Pass the query and parameters separately
             conn.commit()
 
-            return render_template('feedback_success.html', question=question)
+            return render_template("feedback_success.html", question=question)
 
     except Exception as e:
         print("Error during feedback submission:", e)
-        return render_template('error.html', error=str(e))
+        return render_template("error.html", error=str(e))
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
